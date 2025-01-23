@@ -25,24 +25,24 @@ class MainActivity : AppCompatActivity() {
 
         // Buttons
         buttons1 = listOf(
+            findViewById(R.id.btnWrite1),
+            findViewById(R.id.btnWrite2),
+            findViewById(R.id.btnWrite3),
+            findViewById(R.id.btnWrite4),
+            findViewById(R.id.btnWrite5),
+            findViewById(R.id.btnWrite6),
+            findViewById(R.id.btnWrite7),
+            findViewById(R.id.btnWrite8)
+        )
+        buttons2 = listOf(
+            findViewById(R.id.btnWrite9),
+            findViewById(R.id.btnWrite10),
             findViewById(R.id.btnWrite11),
             findViewById(R.id.btnWrite12),
             findViewById(R.id.btnWrite13),
             findViewById(R.id.btnWrite14),
             findViewById(R.id.btnWrite15),
-            findViewById(R.id.btnWrite16),
-            findViewById(R.id.btnWrite17),
-            findViewById(R.id.btnWrite18)
-        )
-        buttons2 = listOf(
-            findViewById(R.id.btnWrite01),
-            findViewById(R.id.btnWrite02),
-            findViewById(R.id.btnWrite03),
-            findViewById(R.id.btnWrite04),
-            findViewById(R.id.btnWrite05),
-            findViewById(R.id.btnWrite06),
-            findViewById(R.id.btnWrite07),
-            findViewById(R.id.btnWrite08)
+            findViewById(R.id.btnWrite16)
         )
 
         // Lights
@@ -54,7 +54,15 @@ class MainActivity : AppCompatActivity() {
             findViewById(R.id.light5),
             findViewById(R.id.light6),
             findViewById(R.id.light7),
-            findViewById(R.id.light8)
+            findViewById(R.id.light8),
+            findViewById(R.id.light9),
+            findViewById(R.id.light10),
+            findViewById(R.id.light11),
+            findViewById(R.id.light12),
+            findViewById(R.id.light13),
+            findViewById(R.id.light14),
+            findViewById(R.id.light15),
+            findViewById(R.id.light16)
         )
 
         // Connect button
@@ -66,9 +74,7 @@ class MainActivity : AppCompatActivity() {
         setupButtonListeners()
 
         // Read button
-        findViewById<Button>(R.id.read).setOnClickListener {
-            readFromPLC()
-        }
+
 
         // Initial connection
         connectToPLC()
@@ -77,12 +83,12 @@ class MainActivity : AppCompatActivity() {
     private fun setupButtonListeners() {
         buttons1.forEachIndexed { index, button ->
             button.setOnClickListener {
-                toggleSpecificBit(index)
+                toggleSpecificBit(index, 0)
             }
         }
         buttons2.forEachIndexed { index, button ->
             button.setOnClickListener {
-                toggleSpecificBit(index + buttons1.size)
+                toggleSpecificBit(index, 1)
             }
         }
     }
@@ -101,11 +107,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun toggleSpecificBit(bitPosition: Int) {
+    private fun toggleSpecificBit(bitPosition: Int, byteOffset: Int) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Read current byte
-                val dataRead = connector?.read(DaveArea.DB, 2, 1, 0)
+                // Read specific byte based on offset
+                val dataRead = connector?.read(DaveArea.DB, 2, 1, byteOffset)
                 val currentByte = dataRead?.get(0) ?: 0.toByte()
 
                 // Create a mask with only the specific bit set
@@ -115,7 +121,7 @@ class MainActivity : AppCompatActivity() {
                 val newByte = (currentByte.toInt() xor bitMask.toInt()).toByte()
 
                 // Write modified byte to PLC
-                connector?.write(DaveArea.DB, 2, 0, byteArrayOf(newByte))
+                connector?.write(DaveArea.DB, 2, byteOffset, byteArrayOf(newByte))
 
                 // Update UI to reflect current state
                 withContext(Dispatchers.Main) {
@@ -130,15 +136,22 @@ class MainActivity : AppCompatActivity() {
     private fun readFromPLC() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val dataRead = connector?.read(DaveArea.DB, 2, 1, 0)
+                val dataRead0 = connector?.read(DaveArea.DB, 2, 1, 0)
+                val dataRead1 = connector?.read(DaveArea.DB, 2, 1, 1)
 
                 withContext(Dispatchers.Main) {
-                    dataRead?.get(0)?.let { byte ->
-                        lights.forEachIndexed { index, light ->
-                            val isOn = byte.toInt() and (1 shl index) != 0
-                            light.setColorFilter(
-                                if (isOn) Color.GREEN else Color.RED
-                            )
+                    dataRead0?.get(0)?.let { byte0 ->
+                        dataRead1?.get(0)?.let { byte1 ->
+                            lights.forEachIndexed { index, light ->
+                                val isOn = if (index < 8) {
+                                    byte0.toInt() and (1 shl index) != 0
+                                } else {
+                                    byte1.toInt() and (1 shl (index - 8)) != 0
+                                }
+                                light.setColorFilter(
+                                    if (isOn) Color.GREEN else Color.RED
+                                )
+                            }
                         }
                     }
                 }
