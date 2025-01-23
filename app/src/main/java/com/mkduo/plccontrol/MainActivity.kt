@@ -156,4 +156,4 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-}
+} //okolo 65h 34min i 23s tyle mi zajelo zrobienie tego - zdecydowanie za dlugo...
