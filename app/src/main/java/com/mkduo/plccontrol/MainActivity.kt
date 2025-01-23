@@ -73,11 +73,6 @@ class MainActivity : AppCompatActivity() {
         // Set up individual button listeners for precise bit toggling
         setupButtonListeners()
 
-        // Read button
-
-
-        // Initial connection
-        connectToPLC()
     }
 
     private fun setupButtonListeners() {
@@ -101,6 +96,7 @@ class MainActivity : AppCompatActivity() {
                     .withHost("192.168.1.196")
                     .withPort(102)
                     .build()
+                readFromPLC()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
